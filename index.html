@@ -977,18 +977,24 @@ body.banner-visible {
       renderList(proList, ["Thinking...", "Thinking...", "Thinking...", "Thinking...", "Thinking..."], "Thinking...");
       renderList(conList, ["Thinking...", "Thinking...", "Thinking...", "Thinking...", "Thinking..."], "Thinking...");
       const apiKey = loadApiKey();
+      if (!apiKey) {
+        showBanner("Add an OpenAI API key in Settings to generate ratings.");
+        ratingValue.textContent = "--";
+        renderList(proList, ["API key required to show pros."], "API key required.");
+        renderList(conList, ["API key required to show cons."], "API key required.");
+        ratingBurst.classList.remove("pulse");
+        return;
+      }
       let source = "heuristic";
       try {
-        if (apiKey) {
-          renderList(proList, ["Calling OpenAI..."], "Calling OpenAI...");
-          renderList(conList, ["Awaiting LLM..."], "Awaiting LLM...");
-          const llmResult = await fetchLlmRating(idea, apiKey);
-          const pros = ensureFive(llmResult.pros, defaultPros);
-          const cons = ensureFive(llmResult.cons, defaultCons);
-          render(llmResult.score, pros, cons);
-          addHistoryEntry({ idea, score: llmResult.score, pros, cons, source: "OpenAI" });
-          source = "OpenAI";
-        }
+        renderList(proList, ["Calling OpenAI..."], "Calling OpenAI...");
+        renderList(conList, ["Awaiting LLM..."], "Awaiting LLM...");
+        const llmResult = await fetchLlmRating(idea, apiKey);
+        const pros = ensureFive(llmResult.pros, defaultPros);
+        const cons = ensureFive(llmResult.cons, defaultCons);
+        render(llmResult.score, pros, cons);
+        addHistoryEntry({ idea, score: llmResult.score, pros, cons, source: "OpenAI" });
+        source = "OpenAI";
       } catch (err) {
         if (err?.status === 401) {
           showBanner("OpenAI API key looks invalid (401). Please re-enter it in Settings.");
